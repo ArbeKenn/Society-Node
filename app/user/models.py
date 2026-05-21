@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, func
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, func, Numeric
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -12,6 +12,7 @@ class User(Base):
     is_staff = Column(Boolean, default=False)
     age = Column(Integer)
     gender = Column(String)
+    coin = Column(Numeric, default=0, nullable=True) #nullable пока что временно чтобы с существующими пользователями не было проблем
     date_joined = Column(DateTime, default=func.now())
     last_login = Column(DateTime, nullable=True)
 
