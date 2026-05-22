@@ -8,7 +8,6 @@ class UserSchema(BaseModel):
     phone: str
     age: int
     gender: str
-    coin: float
 
     @field_validator('password')
     def validate_password(cls, v):

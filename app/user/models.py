@@ -12,7 +12,7 @@ class User(Base):
     is_staff = Column(Boolean, default=False)
     age = Column(Integer)
     gender = Column(String)
-    coin = Column(Numeric, default=0, nullable=True) #nullable пока что временно чтобы с существующими пользователями не было проблем
+    coin = Column(Numeric, default=0)
     date_joined = Column(DateTime, default=func.now())
     last_login = Column(DateTime, nullable=True)
 
