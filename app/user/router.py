@@ -2,11 +2,11 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from pwdlib import PasswordHash
 
-from app.user.schemas import UserSchema, UserLoginSchema
+from app.user.schemas import UserSchema, UserLoginSchema, UserUpdateSchema, UserResponseSchema
 from app.user.models import User as UserModel
+from app.posts.models import Post as PostModel
 from app.database import get_db
 from app.user.jwt import create_token, get_current_user
-from app.user.schemas import UserUpdateSchema
 
 router = APIRouter(
     prefix='/user',
@@ -68,7 +68,7 @@ def login(
     token = create_token(db_user.id)
     return {'token': token}
 
-@router.get('/my_profile')
+@router.get('/my_profile', response_model=UserResponseSchema)
 def profile(
         db: Session = Depends(get_db),
         user_id: int = Depends(get_current_user)
@@ -76,10 +76,12 @@ def profile(
     user_profile = db.query(UserModel).filter(
         UserModel.id == user_id
     ).first()
+
     if not user_profile:
         raise HTTPException(
             status_code=404,
             detail='User Not Found')
+
     return user_profile
 
 @router.put('/my_profile/edit', response_model=UserUpdateSchema)

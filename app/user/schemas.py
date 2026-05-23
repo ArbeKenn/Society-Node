@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator
 import phonenumbers
+from app.posts.schemas import PostResponseSchema
 
 class UserSchema(BaseModel):
     username : str
@@ -38,10 +39,7 @@ class UserResponseSchema(BaseModel):
     age: int
     gender: str
     coin: float
-
-
-    class Config:
-        from_attributes = True
+    posts: list[PostResponseSchema] = []
 
 class UserUpdateSchema(BaseModel):
     username: str
