@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from pwdlib import PasswordHash
 
-from app.user.schemas import UserSchema, UserLoginSchema, UserUpdateSchema, UserResponseSchema
-from app.user.models import User as UserModel
+from app.user.schemas import UserSchema, UserLoginSchema, UserUpdateSchema, UserResponseSchema, FollowersListSchema
+from app.user.models import User as UserModel, Follower as FollowerModel
 from app.database import get_db
 from app.user.jwt import create_token, get_current_user
 
@@ -83,6 +83,36 @@ def profile(
 
     return user_profile
 
+@router.get('/my_profile/followers')
+def my_followers(
+        db: Session = Depends(get_db),
+        user_id: int = Depends(get_current_user)
+):
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail='User not found'
+        )
+
+    followers = [f.follower for f in user.followers_rel]
+    return followers
+
+
+@router.get('/my_profile/following')
+def my_following(
+        db: Session = Depends(get_db),
+        user_id: int = Depends(get_current_user)
+):
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail='User not found'
+        )
+    following = [f.following for f in user.following_rel]
+    return following
+
 @router.put('/my_profile/edit', response_model=UserUpdateSchema)
 def edit_profile(
         user: UserUpdateSchema,
@@ -122,3 +152,53 @@ def del_user(
     db.delete(user)
     db.commit()
     return {'message': 'Account deleted'}
+
+@router.post('/follow/{target_user_id}')
+def follow(
+        target_user_id: int,
+        db: Session = Depends(get_db),
+        user_id: int = Depends(get_current_user)
+):
+    existing = db.query(FollowerModel).filter_by(
+        follower_id=user_id,
+        following_id=target_user_id
+    ).first()
+
+    target_user = db.query(UserModel).filter(
+        UserModel.id == target_user_id
+    ).first()
+    current_user = db.query(UserModel).filter(
+        UserModel.id == user_id
+    ).first()
+
+    if existing:
+        db.delete(existing)
+        target_user.followers -= 1
+        current_user.following -= 1
+        db.commit()
+        return {'status': 'unfollowed'}
+    else:
+        db.add(FollowerModel(follower_id=user_id, following_id=target_user_id))
+        target_user.followers += 1
+        current_user.following += 1
+        db.commit()
+        return {'status': 'followed'}
+
+@router.get('/followers/{user_id}', response_model=FollowersListSchema)
+def get_followers(user_id: int, db: Session = Depends(get_db)):
+    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=404,
+            detail='User not found'
+        )
+    followers = [f.follower for f in user.followers_rel]
+    following = [f.following for f in user.following_rel]
+
+    return {
+        'followers': followers,
+        'following': following,
+        'followers_count': user.followers,
+        'following_count': user.following
+    }
