@@ -16,9 +16,9 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(
-    title='Hive',
-    description='API for school',
-    version='0.2.0',
+    title='Society Node',
+    description='The API for the Society Node social platform. Posting, comments, feed, internal economy (coins), and a perk and feature store.',
+    version='0.4.0',
     lifespan=lifespan,
 )
 
