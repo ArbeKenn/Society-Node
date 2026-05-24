@@ -62,3 +62,17 @@ class UserUpdateSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class FollowResponse(BaseModel):
+    status: str
+
+class FollowerUserSchema(BaseModel):
+    id: int
+    username: str
+
+class FollowersListSchema(BaseModel):
+    followers: list[FollowerUserSchema]
+    following: list[FollowerUserSchema]
+    followers_count: int
+    following_count: int

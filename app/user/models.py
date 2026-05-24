@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, func, Numeric
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, func, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -19,3 +19,15 @@ class User(Base):
     last_login = Column(DateTime, nullable=True)
 
     posts = relationship('Post', back_populates='user')
+
+    followers_rel = relationship('Follower', foreign_keys='Follower.following_id', back_populates='following')
+    following_rel = relationship('Follower', foreign_keys='Follower.follower_id', back_populates='follower')
+
+
+class Follower(Base):
+    __tablename__ = 'followers'
+    follower_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    following_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+
+    follower = relationship('User', foreign_keys=[follower_id], back_populates='following_rel')
+    following = relationship('User', foreign_keys=[following_id], back_populates='followers_rel')
