@@ -13,6 +13,8 @@ class User(Base):
     age = Column(Integer)
     gender = Column(String)
     coin = Column(Numeric, default=0)
+    followers = Column(Integer, default=0)
+    following = Column(Integer, default=0)
     date_joined = Column(DateTime, default=func.now())
     last_login = Column(DateTime, nullable=True)
 

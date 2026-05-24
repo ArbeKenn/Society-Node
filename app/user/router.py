@@ -4,7 +4,6 @@ from pwdlib import PasswordHash
 
 from app.user.schemas import UserSchema, UserLoginSchema, UserUpdateSchema, UserResponseSchema
 from app.user.models import User as UserModel
-from app.posts.models import Post as PostModel
 from app.database import get_db
 from app.user.jwt import create_token, get_current_user
 

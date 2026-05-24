@@ -39,6 +39,8 @@ class UserResponseSchema(BaseModel):
     age: int
     gender: str
     coin: float
+    followers: int
+    following: int
     posts: list[PostResponseSchema] = []
 
 class UserUpdateSchema(BaseModel):
