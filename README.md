@@ -1,7 +1,7 @@
-# Hive
-API для школьной социальной сети
+# Society Node
+The API for the Society Node social platform. Posting, comments, feed, internal economy (coins), and a perk and feature store
 
-## Стек
+## Steak
 - FastAPI
 - PostgreSQL
 - SQLAlchemy
@@ -13,9 +13,14 @@ API для школьной социальной сети
 - `POST /user/reg` — registration
 - `POST /user/log` — login
 - `GET /user/my_profile` — profile 🔒
+- `GET /user/my_profile/followers` — my_followers 🔒
+- `GET /user/my_profile/following` — my_following 🔒
 - `PUT /user/my_profile/edit` — edit_profile 🔒
 - `DEL /user/my_profile/del` — del user 🔒
-- 
+- `POST /follow/{target_user_id}` — followed and unfollowed 🔒
+- `POST /followers/{user_id}` — another user followers and following
+
+
 - `GET /post/posts` — all posts
 - `POST /post/new_post` — create post 🔒
 - `PUT /post/edit` — edit post 🔒
@@ -29,7 +34,7 @@ API для школьной социальной сети
  
 ### 1. Клонировать репозиторий
 ```
-git clone https://github.com/ArbeKenn/Hive.git
+git clone https://github.com/ArbeKenn/Society-Node.git
 cd Hive
 ```
  
@@ -63,44 +68,38 @@ Swagger UI: http://localhost:8000/docs
  
 ---
  
-## 📁 Структура проекта
+## 📁 Structure
  
 ```
 Hive/
 ├── app/
-│   ├── __init__.py
-│   ├── main.py           # FastAPI приложение
-│   ├── database.py       # Подключение к БД
-│   ├── user/
-│   │   ├── models.py     # SQLAlchemy модель User
-│   │   ├── schemas.py    # Pydantic схемы
-│   │   ├── router.py     # Эндпоинты пользователей
-│   │   └── jwt.py        # JWT логика
+│   ├── migrations/
+│   │    ├── versions
+│   │    └── env.py
 │   ├── posts/
-│   │   ├── models.py     # SQLAlchemy модель Post
-│   │   ├── schemas.py    # Pydantic схемы
-│   │   └── router.py     # Эндпоинты публикаций
-│   ├── coins/            # В разработке
-│   └── violations/       # В разработке
+│   │    ├── models.py     
+│   │    ├── schemas.py    
+│   │    └── router.py     
+│   ├── shop/
+│   │    ├── models.py     
+│   │    ├── schemas.py    
+│   │    └── router.py   
+│   ├── user/
+│   │   ├── models.py
+│   │   ├── schemas.py
+│   │   ├── router.py
+│   │   └── jwt.py
+│   ├── __init__.py
+│   ├── alembic.ini
+│   ├── database.py
+│   └── main.py
 ├── .env
 ├── .gitignore
 ├── requirements.txt
 └── README.md
 ```
- 
 ---
  
-## 📝 Что планируется
- 
-- [ ] Комментарии к постам
-- [ ] Система лайков
-- [ ] Система коинов для лучших учеников
-- [ ] Объявления и новости школы
-- [ ] Нарушения дисциплины
-- [ ] Alembic миграции
-- [ ] Docker
----
- 
-## 👤 Автор
+## 👤 Author
  
 Bektemir – [GitHub](https://github.com/ArbeKenn) – [Telegram](https://t.me/ArbeKenn) – [Email](mailto:bektemir1102@gmail.com)
