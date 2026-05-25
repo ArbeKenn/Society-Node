@@ -13,3 +13,9 @@ class Post(Base):
     views = Column(Integer, default=0)
 
     user = relationship('User', back_populates='posts')
+
+class Like(Base):
+    __tablename__ = 'likes'
+
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True)
+    post_id = Column(Integer, ForeignKey('posts.id'), primary_key=True)

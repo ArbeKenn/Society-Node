@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.database import get_db
-from app.posts.models import Post as PostModel
+from app.posts.models import Post as PostModel, Like as LikeModel
 from app.posts.schemas import PostCreateUpdateSchema
 from app.user.jwt import get_current_user
 
@@ -10,11 +12,55 @@ router = APIRouter(
     tags=['Publications']
 )
 
+limiter = Limiter(key_func=get_remote_address)
 
 @router.get('/posts')
-def all_posts(db: Session = Depends(get_db)):
-    posts = db.query(PostModel).all()
+@limiter.limit('1/sec')
+def all_posts(request: Request, db: Session = Depends(get_db)):
+    posts = db.query(PostModel).limit(10)
+    for post in posts:
+        post.views +=1
+        db.commit()
+        db.refresh(post)
     return posts
+
+@router.get('posts/{post_id}')
+@limiter.limit('1/sec')
+def detail_post(request: Request, post_id: int, db: Session = Depends(get_db)):
+    post = db.query(PostModel).filter(PostModel.id == post_id).first()
+    post.views += 1
+    db.commit()
+    db.refresh(post)
+    return post
+
+@router.post('posts/{post_id}/like')
+def like(
+        post_id: int,
+        db: Session = Depends(get_db),
+        user_id: int =Depends(get_current_user)
+):
+    post = db.query(PostModel).filter(PostModel.id == post_id).first()
+    if not post:
+        raise HTTPException(
+            status_code=404,
+            detail='Post Not Found'
+        )
+    existing = db.query(LikeModel).filter_by(
+        user_id=user_id,
+        post_id=post_id
+    ).first()
+
+    if existing:
+        db.delete(existing)
+        post.like -= 1
+        db.commit()
+        return {'status': 'unliked'}
+
+    else:
+        db.add(LikeModel(user_id=user_id, post_id=post_id))
+        post.like += 1
+        db.commit()
+        return {'status': 'liked'}
 
 @router.post('/new_post')
 def create_post(

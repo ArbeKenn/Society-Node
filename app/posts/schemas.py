@@ -1,5 +1,5 @@
 """
-comments, share, folders, direct
+comments
 """
 from pydantic import BaseModel
 
