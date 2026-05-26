@@ -16,7 +16,7 @@ from app.shop.router import router as shop_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_tables()
+    await create_tables()
     yield
 
 app = FastAPI(
