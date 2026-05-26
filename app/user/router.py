@@ -1,8 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from pwdlib import PasswordHash
 
-from app.user.schemas import UserSchema, UserLoginSchema, UserUpdateSchema, UserResponseSchema, FollowersListSchema
+from app.user.schemas import UserSchema, UserLoginSchema, UserUpdateSchema, UserResponseSchema, FollowersListSchema, FollowerUserSchema
 from app.user.models import User as UserModel, Follower as FollowerModel
 from app.database import get_db
 from app.user.jwt import create_token, get_current_user
@@ -15,18 +17,21 @@ router = APIRouter(
 pwd = PasswordHash.recommended()
 
 @router.get('/all')
-def all_users(db: Session = Depends(get_db)):
-    return db.query(UserModel).all()
+async def all_users(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(UserModel))
+    return result.scalars().all()
 
 
 @router.post('/reg')
-def registration(
+async def registration(
         user: UserSchema,
-        db: Session = Depends(get_db)
+        db: AsyncSession = Depends(get_db)
 ):
-    existing_user = db.query(UserModel).filter(
+    result = await db.execute(select(UserModel).where(
         UserModel.username == user.username
-    ).first()
+    ))
+    existing_user = result.scalars().all()
+
     if existing_user:
         raise HTTPException(
             status_code=404,
@@ -39,18 +44,19 @@ def registration(
     new_user.password = hashed_password
 
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    await db.commit()
+    await db.refresh(new_user)
     return new_user
 
 @router.post('/log')
-def login(
+async def login(
         user: UserLoginSchema,
-        db: Session = Depends(get_db)
+        db: AsyncSession = Depends(get_db)
 ):
-    db_user = db.query(UserModel).filter(
+    result = await db.execute(select(UserModel).where(
         UserModel.username == user.username
-    ).first()
+    ))
+    db_user = result.scalar_one_or_none()
 
     if not db_user:
         raise HTTPException(
@@ -68,13 +74,14 @@ def login(
     return {'token': token}
 
 @router.get('/my_profile', response_model=UserResponseSchema)
-def profile(
-        db: Session = Depends(get_db),
+async def profile(
+        db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
-    user_profile = db.query(UserModel).filter(
+    result = await db.execute(select(UserModel).where(
         UserModel.id == user_id
-    ).first()
+    ))
+    user_profile = result.scalar_one_or_none()
 
     if not user_profile:
         raise HTTPException(
@@ -83,12 +90,14 @@ def profile(
 
     return user_profile
 
-@router.get('/my_profile/followers')
-def my_followers(
-        db: Session = Depends(get_db),
+@router.get('/my_profile/followers') #to correct
+async def my_followers(
+        db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
-    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    result = await db.execute(select(UserModel).where(UserModel.id == user_id))
+    user = result.scalar_one_or_none()
+
     if not user:
         raise HTTPException(
             status_code=404,
@@ -99,12 +108,21 @@ def my_followers(
     return followers
 
 
-@router.get('/my_profile/following')
-def my_following(
-        db: Session = Depends(get_db),
+@router.get('/my_profile/following') #to correct
+async def my_following(
+        db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
-    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+    result = await db.execute(
+        select(UserModel)
+        .options(
+            selectinload(UserModel.following_rel)
+            .selectinload(FollowerModel.following)
+        )
+        .where(UserModel.id == user_id)
+    )
+    user = result.scalar_one_or_none()
+
     if not user:
         raise HTTPException(
             status_code=404,
@@ -114,14 +132,16 @@ def my_following(
     return following
 
 @router.put('/my_profile/edit', response_model=UserUpdateSchema)
-def edit_profile(
+async def edit_profile(
         user: UserUpdateSchema,
-        db: Session = Depends(get_db),
+        db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
-    db_user = db.query(UserModel).filter(
+    result = await db.execute(select(UserModel).where(
         UserModel.id == user_id
-    ).first()
+    ))
+
+    db_user = result.scalar_one_or_none()
 
     if not db_user:
         raise HTTPException(
@@ -131,62 +151,75 @@ def edit_profile(
     for key, value in user.model_dump().items():
         setattr(db_user, key, value)
 
-    db.commit()
-    db.refresh(db_user)
+    await db.commit()
+    await db.refresh(db_user)
     return db_user
 
 
 @router.delete('/my_profile/del')
-def del_user(
-        db: Session = Depends(get_db),
+async def del_user(
+        db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
-    user = db.query(UserModel).filter(
+    result = await db.execute(select(UserModel).where(
         UserModel.id == user_id
-    ).first()
+    ))
+    user = result.scalar_one_or_none()
+
     if not user:
         raise HTTPException(
             status_code=404,
             detail='User Not Found'
         )
-    db.delete(user)
-    db.commit()
+    await db.delete(user)
+    await db.commit()
     return {'message': 'Account deleted'}
 
 @router.post('/follow/{target_user_id}')
-def follow(
+async def follow(
         target_user_id: int,
-        db: Session = Depends(get_db),
+        db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
-    existing = db.query(FollowerModel).filter_by(
+    result = await db.execute(select(FollowerModel).filter_by(
         follower_id=user_id,
         following_id=target_user_id
-    ).first()
+    ))
+    existing = result.scalar_one_or_none()
 
-    target_user = db.query(UserModel).filter(
+    result = await db.execute(select(UserModel).where(
         UserModel.id == target_user_id
-    ).first()
-    current_user = db.query(UserModel).filter(
+    ))
+    target_user = result.scalar_one_or_none()
+
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    target_user.followers += 1
+
+    result = await db.execute(select(UserModel).where(
         UserModel.id == user_id
-    ).first()
+    ))
+    current_user = result.scalar_one_or_none()
 
     if existing:
-        db.delete(existing)
+        await db.delete(existing)
         target_user.followers -= 1
         current_user.following -= 1
-        db.commit()
+        await db.commit()
         return {'status': 'unfollowed'}
     else:
         db.add(FollowerModel(follower_id=user_id, following_id=target_user_id))
         target_user.followers += 1
         current_user.following += 1
-        db.commit()
+        await db.commit()
         return {'status': 'followed'}
 
-@router.get('/followers/{user_id}', response_model=FollowersListSchema)
-def get_followers(user_id: int, db: Session = Depends(get_db)):
-    user = db.query(UserModel).filter(UserModel.id == user_id).first()
+@router.get('/followers/{user_id}', response_model=FollowersListSchema) #to correct
+async def get_followers(user_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(UserModel).where(
+        UserModel.id == user_id
+    ))
+    user = result.scalar_one_or_none()
 
     if not user:
         raise HTTPException(
