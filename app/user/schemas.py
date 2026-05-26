@@ -71,6 +71,9 @@ class FollowerUserSchema(BaseModel):
     id: int
     username: str
 
+    class Config:
+        from_attributes = True
+
 class FollowersListSchema(BaseModel):
     followers: list[FollowerUserSchema]
     following: list[FollowerUserSchema]
