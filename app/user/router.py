@@ -4,8 +4,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from pwdlib import PasswordHash
 
-from app.user.schemas import UserSchema, UserLoginSchema, UserUpdateSchema, UserResponseSchema, FollowersListSchema, FollowerUserSchema
-from app.user.models import User as UserModel, Follower as FollowerModel
+from app.user.schemas import (
+    UserSchema, UserLoginSchema, UserUpdateSchema, UserResponseSchema,
+    FollowersListSchema, FollowerUserSchema
+)
+from app.user.models import (
+    User as UserModel,
+    Follower as FollowerModel
+)
 from app.database import get_db
 from app.user.jwt import create_token, get_current_user
 
@@ -30,7 +36,7 @@ async def registration(
     result = await db.execute(select(UserModel).where(
         UserModel.username == user.username
     ))
-    existing_user = result.scalars().all()
+    existing_user = result.scalar_one_or_none()
 
     if existing_user:
         raise HTTPException(
@@ -90,12 +96,17 @@ async def profile(
 
     return user_profile
 
-@router.get('/my_profile/followers') #to correct
+@router.get('/my_profile/followers', response_model=list[FollowerUserSchema])
 async def my_followers(
         db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
-    result = await db.execute(select(UserModel).where(UserModel.id == user_id))
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.id == user_id)
+        .options(selectinload(UserModel.followers_rel)
+                 .selectinload(FollowerModel.follower))
+    )
     user = result.scalar_one_or_none()
 
     if not user:
@@ -108,18 +119,16 @@ async def my_followers(
     return followers
 
 
-@router.get('/my_profile/following') #to correct
+@router.get('/my_profile/following', response_model=list[FollowerUserSchema])
 async def my_following(
         db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
     result = await db.execute(
         select(UserModel)
-        .options(
-            selectinload(UserModel.following_rel)
-            .selectinload(FollowerModel.following)
-        )
         .where(UserModel.id == user_id)
+        .options(selectinload(UserModel.following_rel)
+                 .selectinload(FollowerModel.following))
     )
     user = result.scalar_one_or_none()
 
@@ -140,7 +149,6 @@ async def edit_profile(
     result = await db.execute(select(UserModel).where(
         UserModel.id == user_id
     ))
-
     db_user = result.scalar_one_or_none()
 
     if not db_user:
@@ -193,8 +201,15 @@ async def follow(
     target_user = result.scalar_one_or_none()
 
     if not target_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    target_user.followers += 1
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+    if user_id == target_user_id:
+        raise HTTPException(
+            status_code=400,
+            detail='Can`t follow yourself'
+        )
 
     result = await db.execute(select(UserModel).where(
         UserModel.id == user_id
@@ -205,19 +220,28 @@ async def follow(
         await db.delete(existing)
         target_user.followers -= 1
         current_user.following -= 1
+        db.add(target_user)
+        db.add(current_user)
         await db.commit()
         return {'status': 'unfollowed'}
     else:
         db.add(FollowerModel(follower_id=user_id, following_id=target_user_id))
         target_user.followers += 1
         current_user.following += 1
+        db.add(target_user)
+        db.add(current_user)
         await db.commit()
         return {'status': 'followed'}
 
-@router.get('/followers/{user_id}', response_model=FollowersListSchema) #to correct
+@router.get('/followers/{user_id}', response_model=FollowersListSchema)
 async def get_followers(user_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(UserModel).where(
-        UserModel.id == user_id
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.id == user_id)
+        .options(selectinload(UserModel.following_rel)
+                 .selectinload(FollowerModel.following),
+                 selectinload(UserModel.followers_rel)
+                 .selectinload(FollowerModel.follower)
     ))
     user = result.scalar_one_or_none()
 
