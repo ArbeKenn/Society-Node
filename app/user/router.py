@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from pwdlib import PasswordHash
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.user.schemas import (
     UserSchema, UserLoginSchema, UserUpdateSchema, UserResponseSchema,
@@ -21,6 +23,7 @@ router = APIRouter(
 )
 
 pwd = PasswordHash.recommended()
+limiter = Limiter(key_func=get_remote_address)
 
 @router.get('/all')
 async def all_users(db: AsyncSession = Depends(get_db)):
@@ -29,7 +32,9 @@ async def all_users(db: AsyncSession = Depends(get_db)):
 
 
 @router.post('/reg')
+@limiter.limit('1/sec')
 async def registration(
+        request: Request,
         user: UserSchema,
         db: AsyncSession = Depends(get_db)
 ):
@@ -55,7 +60,9 @@ async def registration(
     return new_user
 
 @router.post('/log')
+@limiter.limit('1/sec')
 async def login(
+        request: Request,
         user: UserLoginSchema,
         db: AsyncSession = Depends(get_db)
 ):
@@ -80,7 +87,9 @@ async def login(
     return {'token': token}
 
 @router.get('/my_profile', response_model=UserResponseSchema)
+@limiter.limit('1/sec')
 async def profile(
+        request: Request,
         db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
@@ -97,7 +106,9 @@ async def profile(
     return user_profile
 
 @router.get('/my_profile/followers', response_model=list[FollowerUserSchema])
+@limiter.limit('1/sec')
 async def my_followers(
+        request: Request,
         db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
@@ -120,7 +131,9 @@ async def my_followers(
 
 
 @router.get('/my_profile/following', response_model=list[FollowerUserSchema])
+@limiter.limit('1/sec')
 async def my_following(
+        request: Request,
         db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
@@ -141,7 +154,9 @@ async def my_following(
     return following
 
 @router.put('/my_profile/edit', response_model=UserUpdateSchema)
+@limiter.limit('1/sec')
 async def edit_profile(
+        request: Request,
         user: UserUpdateSchema,
         db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
@@ -165,7 +180,9 @@ async def edit_profile(
 
 
 @router.delete('/my_profile/del')
+@limiter.limit('1/sec')
 async def del_user(
+        request: Request,
         db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
@@ -184,14 +201,16 @@ async def del_user(
     return {'message': 'Account deleted'}
 
 @router.post('/follow/{target_user_id}')
+@limiter.limit('1/sec')
 async def follow(
+        request: Request,
         target_user_id: int,
         db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
-    result = await db.execute(select(FollowerModel).filter_by(
-        follower_id=user_id,
-        following_id=target_user_id
+    result = await db.execute(select(FollowerModel).where(
+        FollowerModel.follower_id == user_id,
+        FollowerModel.following_id == target_user_id
     ))
     existing = result.scalar_one_or_none()
 
@@ -234,7 +253,12 @@ async def follow(
         return {'status': 'followed'}
 
 @router.get('/followers/{user_id}', response_model=FollowersListSchema)
-async def get_followers(user_id: int, db: AsyncSession = Depends(get_db)):
+@limiter.limit('1/sec')
+async def get_followers(
+        request: Request,
+        user_id: int,
+        db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(
         select(UserModel)
         .where(UserModel.id == user_id)
