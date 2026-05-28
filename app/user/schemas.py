@@ -14,20 +14,20 @@ class UserSchema(BaseModel):
 
     @field_validator('password')
     def validate_password(cls, v):
+        errors = []
         if len(v) < 8:
-            raise HTTPException(
-                status_code=422,
-                detail='minimum password length is 8'
+            errors.append('minimum password length is 8'
             )
         if not re.search(r'[A-Z]', v):
-            raise HTTPException(
-                status_code=422,
-                detail='A capital letter is needed'
+            errors.append('A capital letter is needed'
             )
         if not re.search(r'[0-9]', v):
+            errors.append('Need a number'
+            )
+        if errors:
             raise HTTPException(
                 status_code=422,
-                detail='Need a number'
+                detail=errors
             )
         return v
 
@@ -68,20 +68,19 @@ class UserUpdateSchema(BaseModel):
 
     @field_validator('password')
     def validate_password(cls, v):
+        errors = []
+
         if len(v) < 8:
-            raise HTTPException(
-                status_code=422,
-                detail='minimum password length is 8'
-            )
+            errors.append('minimum password length is 8')
         if not re.search(r'[A-Z]', v):
-            raise HTTPException(
-                status_code=422,
-                detail='A capital letter is needed'
-            )
+            errors.append('A capital letter is needed')
         if not re.search(r'[0-9]', v):
+            errors.append('Need a number')
+
+        if errors:
             raise HTTPException(
                 status_code=422,
-                detail='Need a number'
+                detail=errors
             )
         return v
 
