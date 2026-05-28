@@ -1,4 +1,6 @@
+from fastapi import HTTPException
 from pydantic import BaseModel, EmailStr, field_validator
+import re
 import phonenumbers
 from app.posts.schemas import PostResponseSchema
 
@@ -13,7 +15,20 @@ class UserSchema(BaseModel):
     @field_validator('password')
     def validate_password(cls, v):
         if len(v) < 8:
-            raise ValueError('minimum password length is 8')
+            raise HTTPException(
+                status_code=422,
+                detail='minimum password length is 8'
+            )
+        if not re.search(r'[A-Z]', v):
+            raise HTTPException(
+                status_code=422,
+                detail='A capital letter is needed'
+            )
+        if not re.search(r'[0-9]', v):
+            raise HTTPException(
+                status_code=422,
+                detail='Need a number'
+            )
         return v
 
     @field_validator('phone')
@@ -45,10 +60,30 @@ class UserResponseSchema(BaseModel):
 
 class UserUpdateSchema(BaseModel):
     username: str
+    password: int
     email: str | None
     phone: str
     age: int
     gender: str
+
+    @field_validator('password')
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise HTTPException(
+                status_code=422,
+                detail='minimum password length is 8'
+            )
+        if not re.search(r'[A-Z]', v):
+            raise HTTPException(
+                status_code=422,
+                detail='A capital letter is needed'
+            )
+        if not re.search(r'[0-9]', v):
+            raise HTTPException(
+                status_code=422,
+                detail='Need a number'
+            )
+        return v
 
     @field_validator('phone')
     def validate_phone(cls, v):
