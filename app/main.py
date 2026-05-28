@@ -1,13 +1,13 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
+from fastapi import FastAPI, Depends, Request
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.database import create_tables, get_db
-
 from app.user.router import router as user_router
 from app.posts.router import router as post_router
 from app.posts.models import Post as PostModel
@@ -35,8 +35,12 @@ app.include_router(post_router)
 app.include_router(shop_router)
 
 @app.get('/')
-def home(db: Session = Depends(get_db)):
-    posts = db.query(PostModel).order_by(PostModel.id.desc()).limit(10).all()
+@limiter.limit('1/sec')
+async def home(
+        request: Request,
+        db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(PostModel))
+    posts = result.scalars().all()
     return {
         'latest_posts': posts,
     }
