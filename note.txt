@@ -1,12 +1,23 @@
 I have a test on may 17-19. After the test, I will continue.
 
 ideas for the project
-1. coins, marketplace(shop for coins)
-2. rating
-3. news and posts
-4. follow/unfollow, messangers, group
-5. levels
-6. achievements
-7. tasks, quest, group
-8. moderation
-9. violations
+1. coins, marketplace(shop for coins) 0
+3. news and posts 1
+4. follow/unfollow 1
+5. levels 0
+6. achievements 0
+7. tasks, quest, group 0
+
+21.05.26
+yo, i came
+
+{
+  "username": "coin",
+  "password": "12345678",
+  "email": "coin@email.com",
+  "phone": "+1 202 555 0100",
+  "age": 22,
+  "gender": "man"
+}
+
+Получил все последние 30 комментарии из бд потом вывел самую последную или же более сложная логика: вывести последний комментарий user который создал коммент
