@@ -1,7 +1,13 @@
-"""
-comments
-"""
 from pydantic import BaseModel
+
+class CommentCreateUpdateSchema(BaseModel):
+    text: str
+
+class CommentResponseSchema(BaseModel):
+    id: int
+    user_id: int
+    text: str
+    like: int
 
 class PostCreateUpdateSchema(BaseModel):
     title: str
@@ -14,3 +20,4 @@ class PostResponseSchema(BaseModel):
     description: str | None
     like: int = 0
     views: int = 0
+    comments: list[CommentResponseSchema]
