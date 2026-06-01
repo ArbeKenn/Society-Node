@@ -13,7 +13,7 @@ yo, i came
 
 {
   "username": "coin",
-  "password": "12345678",
+  "password": "A12345678",
   "email": "coin@email.com",
   "phone": "+1 202 555 0100",
   "age": 22,
@@ -21,3 +21,5 @@ yo, i came
 }
 
 Получил все последние 30 комментарии из бд потом вывел самую последную или же более сложная логика: вывести последний комментарий user который создал коммент
+
+I`ll continue tomorrow or in the evening and correct the mistakes.
