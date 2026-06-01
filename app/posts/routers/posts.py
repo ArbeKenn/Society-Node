@@ -8,6 +8,7 @@ from app.database import get_db
 from app.posts.models import (
     Post as PostModel,
     Like as LikeModel,
+    Favorite as FavoriteModel
 )
 from app.posts.schemas import PostCreateUpdateSchema
 from app.user.jwt import get_current_user
@@ -145,16 +146,17 @@ async def like(
         .where(PostModel.id == post_id)
     )
     post = result.scalar_one_or_none()
+
     if not post:
         raise HTTPException(
             status_code=404,
             detail='Post Not Found'
         )
+
     result = await db.execute(
         select(LikeModel)
         .where(LikeModel.user_id == user_id, LikeModel.post_id == post_id)
     )
-
     existing = result.scalar_one_or_none()
 
     if existing:
@@ -168,3 +170,41 @@ async def like(
         post.like += 1
         await db.commit()
         return {'status': 'liked'}
+
+@router.post('/{post_id}/favorite')
+@limiter.limit('1/sec')
+async def favorite(
+        request: Request,
+        post_id: int,
+        db: AsyncSession = Depends(get_db),
+        user_id: int = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(PostModel)
+        .where(PostModel.id == post_id)
+    )
+    post = result.scalar_one_or_none()
+
+    if not post:
+        raise HTTPException(
+            status_code=404,
+            detail='Post not Found'
+        )
+
+    result = await db.execute(
+        select(FavoriteModel)
+        .where(FavoriteModel.user_id == user_id, FavoriteModel.post_id == post_id)
+    )
+    existing = result.scalar_one_or_none()
+
+    if existing:
+        await db.delete(existing)
+        post.favorite -= 1
+        await db.commit()
+        return {'status': 'unfavorited'}
+    else:
+        db.add(FavoriteModel(user_id=user_id, post_id=post_id))
+        post.favorite += 1
+        await db.commit()
+        return {'status': 'favorited'}
+
