@@ -1,12 +1,13 @@
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy import pool
 from alembic import context
+import asyncio
 import sys
 import os
 
 APP_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, APP_DIR)
-
 sys.path.insert(0, os.path.dirname(APP_DIR))
 
 from database import Base, DATABASE_URL
@@ -14,7 +15,6 @@ import app.posts.models
 import app.user.models
 
 config = context.config
-
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 if config.config_file_name is not None:
@@ -35,19 +35,28 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
-def run_migrations_online() -> None:
-    connectable = engine_from_config(
+async def run_async_migrations() -> None:
+    connectable = async_engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-        )
-        with context.begin_transaction():
-            context.run_migrations()
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+    await connectable.dispose()
+
+
+def do_run_migrations(connection):
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online() -> None:
+    asyncio.run(run_async_migrations())
 
 
 if context.is_offline_mode():
