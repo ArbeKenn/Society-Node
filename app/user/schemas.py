@@ -56,6 +56,7 @@ class UserResponseSchema(BaseModel):
     coin: float
     followers: int
     following: int
+    favorite: int
     posts: list[PostResponseSchema] = []
 
 class UserUpdateSchema(BaseModel):
