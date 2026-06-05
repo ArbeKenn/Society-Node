@@ -21,3 +21,9 @@ class PostResponseSchema(BaseModel):
     like: int = 0
     views: int = 0
     comments: list[CommentResponseSchema]
+
+# class FavoriteResponseSchema(BaseModel):
+#     user_id: int
+#     post_id: int
+#
+#     user: int

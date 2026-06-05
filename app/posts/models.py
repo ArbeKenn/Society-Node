@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 from app.database import Base
 
 class Post(Base):
@@ -11,7 +11,7 @@ class Post(Base):
     description = Column(String, nullable=True)
     like = Column(Integer, default=0)
     views = Column(Integer, default=0)
-    favorite = Column(Integer, default=0)
+    # favorite = Column(Integer, default=0)
 
     user = relationship(
         'User',
@@ -30,12 +30,12 @@ class Post(Base):
         cascade='all, delete-orphan',
         lazy='selectin'
     )
-    favorites = relationship(
-        'Favorite',
-        back_populates='post',
-        cascade='all, delete-orphan',
-        lazy='selectin'
-    )
+    # favorites = relationship(
+    #     'Favorite',
+    #     back_populates='post',
+    #     cascade='all, delete-orphan',
+    #     lazy='selectin'
+    # )
 
 class Comment(Base):
     __tablename__ = 'comments'
@@ -101,27 +101,27 @@ class CommentLike(Base):
         lazy='selectin'
     )
 
-class Favorite(Base):
-    __tablename__ = 'favorites'
-
-    user_id = Column(
-        Integer,
-        ForeignKey('users.id'),
-        primary_key=True
-    )
-    post_id = Column(
-        Integer,
-        ForeignKey('posts.id', ondelete='CASCADE'),
-        primary_key=True
-    )
-
-    user = relationship(
-        'User',
-        back_populates='favorites',
-        lazy='selectin'
-    )
-    post = relationship(
-        'Post',
-        back_populates='favorites',
-        lazy='selectin'
-    )
+# class Favorite(Base):
+#     __tablename__ = 'favorites'
+#
+#     user_id = Column(
+#         Integer,
+#         ForeignKey('users.id'),
+#         primary_key=True
+#     )
+#     post_id = Column(
+#         Integer,
+#         ForeignKey('posts.id', ondelete='CASCADE'),
+#         primary_key=True
+#     )
+#
+#     user = relationship(
+#         'User',
+#         back_populates='favorites',
+#         lazy='selectin'
+#     )
+#     post = relationship(
+#         'Post',
+#         back_populates='favorites',
+#         lazy='selectin'
+#     )

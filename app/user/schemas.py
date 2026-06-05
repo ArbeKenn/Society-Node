@@ -56,12 +56,12 @@ class UserResponseSchema(BaseModel):
     coin: float
     followers: int
     following: int
-    favorite: int
+    # favorite: int
     posts: list[PostResponseSchema] = []
 
 class UserUpdateSchema(BaseModel):
     username: str
-    password: int
+    password: str
     email: str | None
     phone: str
     age: int
@@ -97,7 +97,6 @@ class UserUpdateSchema(BaseModel):
 
     class Config:
         from_attributes = True
-
 
 class FollowResponse(BaseModel):
     status: str

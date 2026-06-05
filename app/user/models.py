@@ -16,7 +16,7 @@ class User(Base):
     coin = Column(Numeric, default=0)
     followers = Column(Integer, default=0)
     following = Column(Integer, default=0)
-    favorite = Column(Integer, default=0)
+    # favorite = Column(Integer, default=0)
     date_joined = Column(DateTime, default=func.now())
     last_login = Column(DateTime, nullable=True)
 
@@ -26,11 +26,11 @@ class User(Base):
         lazy='selectin'
     )
 
-    favorites: Mapped[list['Favorite']] = relationship(
-        'Favorite',
-        back_populates='user',
-        lazy='selectin'
-    )
+    # favorites: Mapped[list['Favorite']] = relationship(
+    #     'Favorite',
+    #     back_populates='user',
+    #     lazy='selectin'
+    # )
 
     followers_rel: Mapped[list['Follower']] = relationship(
         'Follower',
