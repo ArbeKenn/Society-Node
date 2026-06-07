@@ -15,9 +15,10 @@ from app.user.models import (
     Follower as FollowerModel
 )
 from app.posts.models import (
-    # Favorite as FavoriteModel,
+    Favorite as FavoriteModel,
     Post as PostModel
 )
+from app.posts.schemas import PostResponseSchema
 from app.database import get_db
 from app.user.jwt import create_token, get_current_user
 
@@ -109,20 +110,20 @@ async def profile(
 
     return user_profile
 
-# @router.get('/my_profile/favorites')
-# @limiter.limit('1/sec')
-# async def my_favorites(
-#         request: Request,
-#         db: AsyncSession = Depends(get_db),
-#         user_id: int = Depends(get_current_user)
-# ):
-#     result = await db.execute(
-#         select(PostModel)
-#         .join(FavoriteModel, FavoriteModel.post_id == PostModel.id)
-#         .where(FavoriteModel.user_id == user_id)
-#     )
-#     favorites = result.scalars().all()
-#     return favorites
+@router.get('/my_profile/favorites', response_model=list[PostResponseSchema])
+@limiter.limit('1/sec')
+async def my_favorites(
+        request: Request,
+        db: AsyncSession = Depends(get_db),
+        user_id: int = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(PostModel)
+        .join(FavoriteModel, FavoriteModel.post_id == PostModel.id)
+        .where(FavoriteModel.user_id == user_id)
+    )
+    favorites = result.scalars().all()
+    return favorites
 
 @router.get('/my_profile/followers', response_model=list[FollowerUserSchema])
 @limiter.limit('1/sec')
