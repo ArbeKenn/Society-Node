@@ -20,10 +20,9 @@ class PostResponseSchema(BaseModel):
     description: str | None
     like: int = 0
     views: int = 0
+    favorite: int = 0
     comments: list[CommentResponseSchema]
 
-# class FavoriteResponseSchema(BaseModel):
-#     user_id: int
-#     post_id: int
-#
-#     user: int
+class FavoriteResponseSchema(BaseModel):
+    user_id: int
+    post_id: int
