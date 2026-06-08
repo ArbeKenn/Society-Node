@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class CommentCreateUpdateSchema(BaseModel):
     text: str
@@ -10,8 +10,8 @@ class CommentResponseSchema(BaseModel):
     like: int
 
 class PostCreateUpdateSchema(BaseModel):
-    title: str
-    description: str | None
+    title: str = Field(min_length=4, max_length=128)
+    description: str
 
 class PostResponseSchema(BaseModel):
     id: int
