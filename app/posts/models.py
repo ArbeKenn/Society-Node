@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship, Mapped
 from app.database import Base
 
@@ -8,7 +8,7 @@ class Post(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey('users.id'))
     title = Column(String)
-    description = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
     like = Column(Integer, default=0)
     views = Column(Integer, default=0)
     favorite = Column(Integer, default=0)
@@ -35,7 +35,7 @@ class Comment(Base):
     __tablename__ = 'comments'
 
     id = Column(Integer, primary_key=True, index=True)
-    text = Column(String)
+    text = Column(Text)
     user_id = Column(Integer, ForeignKey('users.id'))
     post_id = Column(Integer, ForeignKey('posts.id', ondelete='CASCADE'))
     like = Column(Integer, default=0)
