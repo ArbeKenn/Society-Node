@@ -1,16 +1,18 @@
 from fastapi import HTTPException
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, Field
+from typing import Literal
 import re
 import phonenumbers
 from app.posts.schemas import PostResponseSchema
 
 class UserSchema(BaseModel):
-    username : str
+    username : str = Field(max_length=10)
     password: str
     email: EmailStr | None
     phone: str
-    age: int
-    gender: str
+    age: int = Field(ge=14, le=120)
+    gender: Literal["male", "female", "other"]
+    #I understand если user send "MALE" будет ошибка. Чтобы этого не было front сделает просто кнопки через <select name="gender">
 
     @field_validator('password')
     def validate_password(cls, v):
@@ -49,10 +51,10 @@ class UserLoginSchema(BaseModel):
 class UserResponseSchema(BaseModel):
     id: int
     username: str
-    email: str | None
+    email: EmailStr | None
     phone: str
     age: int
-    gender: str
+    gender: Literal["male", "female", "other"]
     coin: float
     followers: int
     following: int
@@ -60,12 +62,12 @@ class UserResponseSchema(BaseModel):
     posts: list[PostResponseSchema] = []
 
 class UserUpdateSchema(BaseModel):
-    username: str
+    username : str = Field(max_length=10)
     password: str
-    email: str | None
+    email: EmailStr | None
     phone: str
-    age: int
-    gender: str
+    age: int = Field(ge=14, le=120)
+    gender: Literal["male", "female", "other"]
 
     @field_validator('password')
     def validate_password(cls, v):
