@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from slowapi import Limiter
 from slowapi.util import get_remote_address
-from watchfiles import awatch
+from slowapi.errors import RateLimitExceeded
 
 from app.database import get_db
 from app.posts.models import (
@@ -31,8 +31,22 @@ async def all_posts(
     await db.commit()
     return posts
 
+@limiter.limit("1/5seconds")
+async def increment_post_views(
+        request: Request,
+        post_id: int,
+        db: AsyncSession
+):
+    result = await db.execute(
+        select(PostModel)
+        .where(PostModel.id == post_id)
+    )
+    post = result.scalar_one_or_none()
+    post.views += 1
+    await db.commit()
+
 @router.get('/{post_id}')
-@limiter.limit('1/sec')
+
 async def detail_post(
         request: Request,
         post_id: int, db:
@@ -49,7 +63,12 @@ async def detail_post(
             detail='Post not found'
         )
 
-    post.views += 1
+    try:
+        await increment_post_views(request, post_id, db)
+
+    except RateLimitExceeded:
+        pass
+
     await db.commit()
     await db.refresh(post)
     return post
