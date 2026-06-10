@@ -17,7 +17,8 @@ The API for the Society Node social platform. Posting, comments, feed, internal 
 
 ## Endpoints
 - `GET /` - home
--
+
+
 - `POST /user/reg` - registration
 - `POST /user/log` - login
 - `GET /user/my_profile` - profile 🔒
@@ -41,6 +42,8 @@ The API for the Society Node social platform. Posting, comments, feed, internal 
 - `PUT /posts/comment/{comment_id}` - edit comment 🔒
 - `DEL /posts/comment/{comment_id}` - del comment 🔒
 - `POST /posts/comment/{comment_id}/like` - like comment 🔒
+
+- `GET /notifications/` - all comments 🔒
 
 🔒 — requires a JWT token
  
@@ -92,6 +95,10 @@ Society Node/
 │   ├── migrations/
 │   │    ├── versions
 │   │    └── env.py
+│   ├── notifications/
+│   │    ├── models.py     
+│   │    ├── schemas.py    
+│   │    └── router.py   
 │   ├── posts/
 │   │    ├── posts/
 │   │    │   ├── __init__.py
