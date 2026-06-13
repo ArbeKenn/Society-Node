@@ -45,6 +45,10 @@ The API for the Society Node social platform. Posting, comments, feed, internal 
 
 - `GET /notifications/` - all comments 🔒
 
+
+- `GET /search/post` - search posts
+- `GET /search/user` - search users
+
 🔒 — requires a JWT token
  
 ---
@@ -96,20 +100,23 @@ Society Node/
 │   │    ├── versions
 │   │    └── env.py
 │   ├── notifications/
-│   │    ├── models.py     
-│   │    ├── schemas.py    
-│   │    └── router.py   
+│   │    ├── models.py
+│   │    ├── schemas.py
+│   │    └── router.py
 │   ├── posts/
 │   │    ├── posts/
 │   │    │   ├── __init__.py
 │   │    │   ├── comments.py
 │   │    │   └── posts.py
-│   │    ├── models.py     
-│   │    └── schemas.py      
+│   │    ├── models.py
+│   │    └── schemas.py
+│   ├── notifications/
+│   │    ├── schemas.py
+│   │    └── router.py
 │   ├── shop/
-│   │    ├── models.py     
-│   │    ├── schemas.py    
-│   │    └── router.py   
+│   │    ├── models.py
+│   │    ├── schemas.py
+│   │    └── router.py
 │   ├── user/
 │   │   ├── models.py
 │   │   ├── schemas.py
