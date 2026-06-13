@@ -54,7 +54,7 @@ class UserResponseSchema(BaseModel):
     email: EmailStr | None
     phone: str
     age: int
-    gender: Literal["male", "female", "other"]
+    gender: str
     coin: float
     followers: int
     following: int

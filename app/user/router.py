@@ -31,12 +31,6 @@ router = APIRouter(
 pwd = PasswordHash.recommended()
 limiter = Limiter(key_func=get_remote_address)
 
-@router.get('/all')
-async def all_users(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(UserModel))
-    return result.scalars().all()
-
-
 @router.post('/reg')
 @limiter.limit('1/sec')
 async def registration(
@@ -44,9 +38,10 @@ async def registration(
         user: UserSchema,
         db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(UserModel).where(
-        UserModel.username == user.username
-    ))
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.username == user.username)
+    )
     existing_user = result.scalar_one_or_none()
 
     if existing_user:
@@ -72,9 +67,10 @@ async def login(
         user: UserLoginSchema,
         db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(select(UserModel).where(
-        UserModel.username == user.username
-    ))
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.username == user.username)
+    )
     db_user = result.scalar_one_or_none()
 
     if not db_user:
@@ -99,9 +95,10 @@ async def profile(
         db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
-    result = await db.execute(select(UserModel).where(
-        UserModel.id == user_id
-    ))
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.id == user_id)
+    )
     user_profile = result.scalar_one_or_none()
 
     if not user_profile:
