@@ -14,6 +14,7 @@ from app.posts.models import (
 from app.posts.schemas import PostCreateUpdateSchema
 from app.user.jwt import get_current_user
 from app.user.models import User as UserModel
+from app.notifications.models import Notification as NotificationModel
 
 router = APIRouter()
 
@@ -46,7 +47,6 @@ async def increment_post_views(
     await db.commit()
 
 @router.get('/{post_id}')
-
 async def detail_post(
         request: Request,
         post_id: int, db:
@@ -173,6 +173,21 @@ async def like(
             status_code=404,
             detail='Post Not Found'
         )
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.id == user_id)
+    )
+    user = result.scalar_one_or_none()
+
+    if post.user_id != user_id:
+        new_notification = NotificationModel(
+            user_id=post.user_id,
+            user_id_from_whom=user_id,
+            title=f"User {user.username} liked your post!",
+            is_read=False
+        )
+        db.add(new_notification)
+        await db.commit()
 
     result = await db.execute(
         select(LikeModel)

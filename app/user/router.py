@@ -18,6 +18,7 @@ from app.posts.models import (
     Favorite as FavoriteModel,
     Post as PostModel
 )
+from app.notifications.models import Notification as NotificationModel
 from app.posts.schemas import PostResponseSchema
 from app.database import get_db
 from app.user.jwt import create_token, get_current_user
@@ -264,7 +265,20 @@ async def follow(
         await db.commit()
         return {'status': 'unfollowed'}
     else:
-        db.add(FollowerModel(follower_id=user_id, following_id=target_user_id))
+
+        new_notification = NotificationModel(
+            user_id=target_user_id,
+            user_id_from_whom=user_id,
+            title=f"User {current_user.username} has subscribed to you",
+            is_read=False
+        )
+        db.add(new_notification)
+        await db.commit()
+
+        db.add(FollowerModel
+               (follower_id=user_id,
+                following_id=target_user_id)
+               )
         target_user.followers += 1
         current_user.following += 1
         db.add(target_user)
