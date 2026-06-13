@@ -8,11 +8,14 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.database import create_tables, get_db
+from app.posts.models import Post as PostModel
+
 from app.user.router import router as user_router
 from app.posts.routers import router as posts_router
-from app.posts.models import Post as PostModel
 from app.shop.router import router as shop_router
 from app.notifications.router import router as notification_router
+from app.search.router import router as search_router
+
 
 
 @asynccontextmanager
@@ -35,6 +38,7 @@ app.include_router(user_router)
 app.include_router(posts_router)
 app.include_router(notification_router)
 app.include_router(shop_router)
+app.include_router(search_router)
 
 @app.get('/')
 @limiter.limit('1/sec')
