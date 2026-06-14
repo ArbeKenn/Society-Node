@@ -61,6 +61,13 @@ class UserResponseSchema(BaseModel):
     favorite: int
     posts: list[PostResponseSchema] = []
 
+class UserItemResponseSchema(BaseModel):
+    id: int
+    title: str
+    user_id: int
+    post_id: int
+    quantity: int
+
 class UserUpdateSchema(BaseModel):
     username : str = Field(max_length=10)
     password: str
