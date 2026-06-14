@@ -6,6 +6,7 @@ from sqlalchemy import select
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from starlette.middleware.cors import CORSMiddleware
 
 from app.database import create_tables, get_db
 from app.posts.models import Post as PostModel
@@ -28,6 +29,14 @@ app = FastAPI(
     description='The API for the Society Node social platform. Posting, comments, feed, internal economy (coins), and a perk and feature store.',
     version='0.4.0',
     lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:8000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 limiter = Limiter(key_func=get_remote_address)
