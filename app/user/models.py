@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean, DateTime, func, Numeric, ForeignKey
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, func, Numeric, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship, Mapped
 from app.database import Base
 
@@ -17,6 +17,7 @@ class User(Base):
     followers = Column(Integer, default=0)
     following = Column(Integer, default=0)
     favorite = Column(Integer, default=0)
+    is_admin = Column(Boolean, default=False)
     date_joined = Column(DateTime, default=func.now())
     last_login = Column(DateTime, nullable=True)
 
@@ -48,6 +49,9 @@ class UserItem(Base):
 
     quantity = Column(Integer, default=1)
 
+    __table_args__ = (
+        UniqueConstraint("user_id", "item_id"),
+    )
 
 
 class Follower(Base):

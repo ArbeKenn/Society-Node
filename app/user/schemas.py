@@ -75,6 +75,7 @@ class UserUpdateSchema(BaseModel):
     phone: str
     age: int = Field(ge=14, le=120)
     gender: Literal["male", "female", "other"]
+    is_admin: bool
 
     @field_validator('password')
     def validate_password(cls, v):
