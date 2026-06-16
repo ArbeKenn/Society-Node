@@ -34,7 +34,7 @@ pwd = PasswordHash.recommended()
 limiter = Limiter(key_func=get_remote_address)
 
 @router.post('/reg')
-@limiter.limit('1/sec')
+@limiter.limit('1/3seconds')
 async def registration(
         request: Request,
         user: UserSchema,
@@ -62,8 +62,8 @@ async def registration(
     await db.refresh(new_user)
     return new_user
 
-@router.post('/log')
-@limiter.limit('1/sec')
+@router.post('/log', response_model=UserLoginSchema)
+@limiter.limit('1/3seconds')
 async def login(
         request: Request,
         user: UserLoginSchema,
@@ -91,7 +91,7 @@ async def login(
     return {'token': token}
 
 @router.get('/my_profile', response_model=UserResponseSchema)
-@limiter.limit('1/sec')
+@limiter.limit('50/1seconds')
 async def profile(
         request: Request,
         db: AsyncSession = Depends(get_db),
@@ -111,7 +111,7 @@ async def profile(
     return user_profile
 
 @router.get('/my_profile/favorites', response_model=list[PostResponseSchema])
-@limiter.limit('1/sec')
+@limiter.limit('50/1seconds')
 async def my_favorites(
         request: Request,
         db: AsyncSession = Depends(get_db),
@@ -126,7 +126,9 @@ async def my_favorites(
     return favorites
 
 @router.get('/my_profile/my_item', response_model=list[UserItemResponseSchema])
+@limiter.limit('50/1seconds')
 async def my_item(
+        request: Request,
         db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
@@ -139,7 +141,7 @@ async def my_item(
     return items
 
 @router.get('/my_profile/followers', response_model=list[FollowerUserSchema])
-@limiter.limit('1/sec')
+@limiter.limit('50/1seconds')
 async def my_followers(
         request: Request,
         db: AsyncSession = Depends(get_db),
@@ -164,7 +166,7 @@ async def my_followers(
 
 
 @router.get('/my_profile/following', response_model=list[FollowerUserSchema])
-@limiter.limit('1/sec')
+@limiter.limit('50/1seconds')
 async def my_following(
         request: Request,
         db: AsyncSession = Depends(get_db),
@@ -187,7 +189,7 @@ async def my_following(
     return following
 
 @router.put('/my_profile/edit', response_model=UserUpdateSchema)
-@limiter.limit('1/sec')
+@limiter.limit('1/3seconds')
 async def edit_profile(
         request: Request,
         user: UserUpdateSchema,
@@ -213,7 +215,7 @@ async def edit_profile(
 
 
 @router.delete('/my_profile/del')
-@limiter.limit('1/sec')
+@limiter.limit('1/3seconds')
 async def del_user(
         request: Request,
         db: AsyncSession = Depends(get_db),
@@ -234,7 +236,7 @@ async def del_user(
     return {'message': 'Account deleted'}
 
 @router.post('/follow/{target_user_id}')
-@limiter.limit('1/sec')
+@limiter.limit('1/3seconds')
 async def follow(
         request: Request,
         target_user_id: int,
@@ -277,7 +279,6 @@ async def follow(
         await db.commit()
         return {'status': 'unfollowed'}
     else:
-
         new_notification = NotificationModel(
             user_id=target_user_id,
             user_id_from_whom=user_id,
@@ -299,7 +300,7 @@ async def follow(
         return {'status': 'followed'}
 
 @router.get('/followers/{user_id}', response_model=FollowersListSchema)
-@limiter.limit('1/sec')
+@limiter.limit('50/1seconds')
 async def get_followers(
         request: Request,
         user_id: int,

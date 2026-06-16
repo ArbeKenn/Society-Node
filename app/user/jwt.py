@@ -1,8 +1,8 @@
-import jwt
 from datetime import datetime, timedelta
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
+import jwt
 
 SECRET_KEY = os.getenv('SECRET_KEY','')
 security = HTTPBearer()
