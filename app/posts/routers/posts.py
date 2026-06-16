@@ -11,7 +11,7 @@ from app.posts.models import (
     Like as LikeModel,
     Favorite as FavoriteModel
 )
-from app.posts.schemas import PostCreateUpdateSchema
+from app.posts.schemas import PostCreateUpdateSchema, PostResponseSchema
 from app.user.jwt import get_current_user
 from app.user.models import User as UserModel
 from app.notifications.models import Notification as NotificationModel
@@ -21,7 +21,7 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 @router.get('/')
-@limiter.limit('1/sec')
+@limiter.limit("50/1seconds")
 async def all_posts(
         request: Request,
         db: AsyncSession = Depends(get_db)
@@ -46,7 +46,7 @@ async def increment_post_views(
     post.views += 1
     await db.commit()
 
-@router.get('/{post_id}')
+@router.get('/{post_id}', response_model=PostResponseSchema)
 async def detail_post(
         request: Request,
         post_id: int, db:
@@ -73,8 +73,8 @@ async def detail_post(
     await db.refresh(post)
     return post
 
-@router.post('/')
-@limiter.limit('1/sec')
+@router.post('/', response_model=PostCreateUpdateSchema)
+@limiter.limit("1/3seconds")
 async def create_post(
         request: Request,
         post_schema: PostCreateUpdateSchema,
@@ -91,8 +91,8 @@ async def create_post(
     return new_post
 
 
-@router.put('/{post_id}')
-@limiter.limit('1/sec')
+@router.put('/{post_id}', response_model=PostResponseSchema)
+@limiter.limit("1/3seconds")
 async def edit_post(
         request: Request,
         post_id: int,
@@ -126,7 +126,7 @@ async def edit_post(
     return post
 
 @router.delete('/{post_id}')
-@limiter.limit('1/sec')
+@limiter.limit("1/3seconds")
 async def del_post(
         request: Request,
         post_id: int,
@@ -155,7 +155,7 @@ async def del_post(
     return {'message': 'Post deleted'}
 
 @router.post('/{post_id}/like')
-@limiter.limit('1/sec')
+@limiter.limit("1/3seconds")
 async def like(
         request: Request,
         post_id: int,
@@ -191,7 +191,10 @@ async def like(
 
     result = await db.execute(
         select(LikeModel)
-        .where(LikeModel.user_id == user_id, LikeModel.post_id == post_id)
+        .where(
+            LikeModel.user_id == user_id,
+            LikeModel.post_id == post_id
+        )
     )
     existing = result.scalar_one_or_none()
 
@@ -208,7 +211,7 @@ async def like(
         return {'status': 'liked'}
 
 @router.post('/{post_id}/favorite')
-@limiter.limit('1/sec')
+@limiter.limit("1/3seconds")
 async def favorite(
         request: Request,
         post_id: int,
@@ -235,7 +238,10 @@ async def favorite(
 
     result = await db.execute(
         select(FavoriteModel)
-        .where(FavoriteModel.user_id == user_id, FavoriteModel.post_id == post_id)
+        .where(
+            FavoriteModel.user_id == user_id,
+            FavoriteModel.post_id == post_id
+        )
     )
     existing = result.scalar_one_or_none()
 
