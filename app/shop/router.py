@@ -1,6 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
 from app.database import get_db
 from app.user.jwt import get_current_user
 from app.shop.models import ShopItem as ShopItemModel
@@ -9,14 +12,19 @@ from app.user.models import (
     User as UserModel,
     UserItem as UserItemModel
 )
+from app.notifications.models import Notification as NotificationModel
 
 router = APIRouter(
     prefix='/shop',
     tags=['Shop']
 )
 
+limiter = Limiter(key_func=get_remote_address)
+
 @router.get('/', response_model=list[ShopItemSchema])
+@limiter.limit('50/1seconds')
 async def get_shop(
+        request: Request,
         db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(ShopItemModel))
@@ -25,7 +33,9 @@ async def get_shop(
     return items_shop
 
 @router.post('/{item_id}/by')
+@limiter.limit('1/3seconds')
 async def by_item(
+        request: Request,
         item_id: int,
         db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
@@ -75,6 +85,13 @@ async def by_item(
             quantity=1
         )
         db.add(new_item)
+
+    new_notification =  NotificationModel(
+        user_id=user_id,
+        title=f'You bought this item {item.title}',
+        is_read=False
+    )
+    db.add(new_notification)
 
     await db.commit()
     return {f'you have successfully purchased {item.title}'}
