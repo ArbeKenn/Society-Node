@@ -65,7 +65,7 @@ class UserItemResponseSchema(BaseModel):
     id: int
     title: str
     user_id: int
-    post_id: int
+    item_id: int
     quantity: int
 
 class UserUpdateSchema(BaseModel):

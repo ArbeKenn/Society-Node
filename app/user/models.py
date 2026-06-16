@@ -44,6 +44,7 @@ class UserItem(Base):
     __tablename__ = "user_items"
 
     id = Column(Integer, primary_key=True)
+    title = Column(String)
     user_id = Column(ForeignKey("users.id"))
     item_id = Column(ForeignKey("shop_items.id"))
 

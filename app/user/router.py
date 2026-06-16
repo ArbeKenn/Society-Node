@@ -7,11 +7,13 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from app.user.schemas import (
-    UserSchema, UserLoginSchema, UserUpdateSchema, UserResponseSchema,
+    UserSchema, UserLoginSchema, UserUpdateSchema,
+    UserResponseSchema, UserItemResponseSchema,
     FollowersListSchema, FollowerUserSchema
 )
 from app.user.models import (
     User as UserModel,
+    UserItem as UserItemModel,
     Follower as FollowerModel
 )
 from app.posts.models import (
@@ -54,7 +56,7 @@ async def registration(
 
     new_user = UserModel(**user.model_dump())
     new_user.password = hashed_password
-
+    new_user.coin = 100
     db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
@@ -122,6 +124,19 @@ async def my_favorites(
     )
     favorites = result.scalars().all()
     return favorites
+
+@router.get('/my_profile/my_item', response_model=list[UserItemResponseSchema])
+async def my_item(
+        db: AsyncSession = Depends(get_db),
+        user_id: int = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(UserItemModel)
+        .where(UserItemModel.user_id == user_id)
+    )
+    items = result.scalars().all()
+
+    return items
 
 @router.get('/my_profile/followers', response_model=list[FollowerUserSchema])
 @limiter.limit('1/sec')
