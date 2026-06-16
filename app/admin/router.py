@@ -13,7 +13,22 @@ router = APIRouter(
 )
 
 @router.get('/')
-async def admin():
+async def admin(
+        db: AsyncSession = Depends(get_db),
+        user_id: int = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.id == user_id)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user.is_admin:
+        raise HTTPException(
+            status_code=403,
+            detail='You do not have administrator rights.'
+        )
+
     return {'message': 'Admin panel'}
 
 
@@ -23,7 +38,10 @@ async def create_item(
         db: AsyncSession = Depends(get_db),
         user_id: int = Depends(get_current_user)
 ):
-    result = await db.execute(select(UserModel).where(UserModel.id == user_id))
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.id == user_id)
+    )
     user = result.scalar_one_or_none()
 
     if not user.is_admin:
@@ -58,7 +76,10 @@ async def update_item(
             detail='Item Not Found'
         )
 
-    result = await db.execute(select(UserModel).where(UserModel.id == user_id))
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.id == user_id)
+    )
     user = result.scalar_one_or_none()
 
     if not user.is_admin:
