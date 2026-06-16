@@ -1,17 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from app.database import get_db
 from app.user.jwt import get_current_user
-from app.user.models import User as UserModel
 from app.notifications.models import Notification as NotificationModel
+from app.notifications.schemas import NotificationSchema
 
 router = APIRouter(
     prefix='/notification',
     tags=['Notification']
 )
 
-@router.get('/')
+limiter = Limiter(key_func=get_remote_address)
+
+@router.get('/', response_model=list[NotificationSchema])
+@limiter.limit("50/1seconds")
 async def Notification(
         request: Request,
         db: AsyncSession = Depends(get_db),

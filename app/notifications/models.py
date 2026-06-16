@@ -7,5 +7,5 @@ class Notification(Base):
     id = Column(Integer, primary_key=True)
     title = Column(String)
     user_id = Column(Integer, ForeignKey('users.id'))
-    user_id_from_whom = Column(Integer, ForeignKey('users.id'))
+    user_id_from_whom = Column(Integer, ForeignKey('users.id'), nullable=True)
     is_read = Column(Boolean)
