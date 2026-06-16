@@ -18,11 +18,12 @@ The API for the Society Node social platform. Posting, comments, feed, internal 
 ## Endpoints
 - `GET /` - home
 
-
+### Authentication
 - `POST /user/reg` - registration
 - `POST /user/log` - login
 - `GET /user/my_profile` - profile 🔒
 - `GET /user/my_profile/favorites` - my_favorites 🔒
+- `GET /user/my_profile/my_items` - my_items 🔒
 - `GET /user/my_profile/followers` - my_followers 🔒
 - `GET /user/my_profile/following` - my_following 🔒
 - `PUT /user/my_profile/edit` - edit_profile 🔒
@@ -30,7 +31,7 @@ The API for the Society Node social platform. Posting, comments, feed, internal 
 - `POST /follow/{target_user_id}` - followed and unfollowed 🔒
 - `POST /followers/{user_id}` - another user followers and following
 
-
+### Posts
 - `GET /post/posts` - all posts
 - `POST /post/new_post` - create post 🔒
 - `GET /post/{post_id}` - detail post 🔒
@@ -43,13 +44,26 @@ The API for the Society Node social platform. Posting, comments, feed, internal 
 - `DEL /posts/comment/{comment_id}` - del comment 🔒
 - `POST /posts/comment/{comment_id}/like` - like comment 🔒
 
+### Shop
+- `GET /shop/` - all items
+- `POST /shop/{item_id}/by` - by item 🔒
+
+### Notifications
 - `GET /notifications/` - all comments 🔒
 
-
+### Search
 - `GET /search/post` - search posts
 - `GET /search/user` - search users
+- `GET /search/shop_item` - search items in shop
 
-🔒 — requires a JWT token
+### Admin
+- `GET /admin/` - admin 🔒
+- `POST /admin/item` - create new item_shop 🔒🔒
+- `PUT /admin/item/{item_id}` - edit item 🔒🔒
+- `DEL /admin/item/{item_id}` - del item 🔒🔒
+- 
+🔒 - requires a JWT token
+🔒🔒 - Admin
  
 ---
  
@@ -96,6 +110,10 @@ Swagger UI: http://localhost:8000/docs
 ```
 Society Node/
 ├── app/
+│   ├── admin/
+│   │    ├── models.py
+│   │    ├── schemas.py
+│   │    └── router.py
 │   ├── migrations/
 │   │    ├── versions
 │   │    └── env.py
@@ -104,13 +122,13 @@ Society Node/
 │   │    ├── schemas.py
 │   │    └── router.py
 │   ├── posts/
-│   │    ├── posts/
+│   │    ├── routers/
 │   │    │   ├── __init__.py
 │   │    │   ├── comments.py
 │   │    │   └── posts.py
 │   │    ├── models.py
 │   │    └── schemas.py
-│   ├── notifications/
+│   ├── search/
 │   │    ├── schemas.py
 │   │    └── router.py
 │   ├── shop/
