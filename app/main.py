@@ -27,7 +27,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title='Society Node',
     description='The API for the Society Node social platform. Posting, comments, feed, internal economy (coins), and a perk and feature store.',
-    version='0.7.0',
+    version='0.7.2',
     lifespan=lifespan,
 )
 
@@ -54,9 +54,8 @@ app.include_router(search_router)
 @limiter.limit('1/sec')
 async def home(
         request: Request,
-        db: AsyncSession = Depends(get_db)):
+        db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(select(PostModel))
     posts = result.scalars().all()
-    return {
-        'latest_posts': posts,
-    }
+    return {'posts': posts}
