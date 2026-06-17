@@ -20,7 +20,7 @@ router = APIRouter()
 
 limiter = Limiter(key_func=get_remote_address)
 
-@router.get('/')
+@router.get('/', response_model=list[PostResponseSchema])
 @limiter.limit("50/1seconds")
 async def all_posts(
         request: Request,
@@ -73,8 +73,21 @@ async def detail_post(
     await db.refresh(post)
     return post
 
+@limiter.limit("1/24hours")
+async def verification_coin(
+        request: Request,
+        user_id: int,
+        db: AsyncSession
+):
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.id == user_id)
+    )
+    user = result.scalar_one_or_none()
+    user.coin += 5
+    await db.commit()
+
 @router.post('/', response_model=PostCreateUpdateSchema)
-@limiter.limit("1/3seconds")
 async def create_post(
         request: Request,
         post_schema: PostCreateUpdateSchema,
@@ -84,6 +97,13 @@ async def create_post(
 
     new_post = PostModel(**post_schema.model_dump())
     new_post.user_id = user_id
+
+    try:
+        await verification_coin(request, user_id, db)
+
+    except RateLimitExceeded:
+        pass
+
     db.add(new_post)
     await db.commit()
     await db.refresh(new_post)
