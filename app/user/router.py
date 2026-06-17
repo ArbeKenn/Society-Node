@@ -7,8 +7,8 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from app.user.schemas import (
-    UserSchema, UserLoginSchema, UserUpdateSchema,
-    UserResponseSchema, UserItemResponseSchema,
+    UserSchema, UserLoginSchema, LoginResponseSchema,
+    UserUpdateSchema, UserResponseSchema, UserItemResponseSchema,
     FollowersListSchema, FollowerUserSchema
 )
 from app.user.models import (
@@ -33,7 +33,7 @@ router = APIRouter(
 pwd = PasswordHash.recommended()
 limiter = Limiter(key_func=get_remote_address)
 
-@router.post('/reg')
+@router.post('/reg', response_model=UserSchema)
 @limiter.limit('1/3seconds')
 async def registration(
         request: Request,
@@ -62,7 +62,7 @@ async def registration(
     await db.refresh(new_user)
     return new_user
 
-@router.post('/log', response_model=UserLoginSchema)
+@router.post('/log', response_model=LoginResponseSchema)
 @limiter.limit('1/3seconds')
 async def login(
         request: Request,

@@ -53,7 +53,7 @@ async def search_user(
     users = result.scalars().all()
     return users
 
-@router.get('/shop', response_model=ShopItemSchema)
+@router.get('/shop', response_model=list[ShopItemSchema])
 @limiter.limit('50/1seconds')
 async def search_in_shop(
         request: Request,
@@ -66,3 +66,5 @@ async def search_in_shop(
         .offset(schemas.offset)
         .limit(schemas.limit)
     )
+    items = result.scalars().all()
+    return items

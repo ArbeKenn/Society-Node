@@ -43,11 +43,6 @@ class UserSchema(BaseModel):
             raise ValueError('wrong format number')
         return v
 
-
-class UserLoginSchema(BaseModel):
-    username: str
-    password: str
-
 class UserResponseSchema(BaseModel):
     id: int
     username: str
@@ -60,6 +55,13 @@ class UserResponseSchema(BaseModel):
     following: int
     favorite: int
     posts: list[PostResponseSchema] = []
+
+class UserLoginSchema(BaseModel):
+    username: str
+    password: str
+
+class LoginResponseSchema(BaseModel):
+    token: str
 
 class UserItemResponseSchema(BaseModel):
     id: int
