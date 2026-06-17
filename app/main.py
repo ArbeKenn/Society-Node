@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -10,7 +9,6 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.database import create_tables, get_db
 from app.posts.models import Post as PostModel
-
 from app.admin.router import router as admin_router
 from app.user.router import router as user_router
 from app.posts.routers import router as posts_router
@@ -27,7 +25,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title='Society Node',
     description='The API for the Society Node social platform. Posting, comments, feed, internal economy (coins), and a perk and feature store.',
-    version='0.7.2',
+    version='0.7.3',
     lifespan=lifespan,
 )
 
@@ -51,7 +49,7 @@ app.include_router(notification_router)
 app.include_router(search_router)
 
 @app.get('/')
-@limiter.limit('1/sec')
+@limiter.limit('50/1seconds')
 async def home(
         request: Request,
         db: AsyncSession = Depends(get_db)
