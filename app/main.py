@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title='Society Node',
     description='The API for the Society Node social platform. Posting, comments, feed, internal economy (coins), and a perk and feature store.',
-    version='0.7.3',
+    version='1.0.0',
     lifespan=lifespan,
 )
 
