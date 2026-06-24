@@ -1,0 +1,208 @@
+from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+from app.database import get_db
+from app.posts.models import (
+    Post as PostModel,
+    Comment as CommentModel,
+    CommentLike as CommentLikeModel
+)
+from app.user.models import User as UserModel
+from app.notifications.models import Notification as NotificationModel
+from app.posts.schemas import CommentCreateUpdateSchema, CommentResponseSchema
+from app.user.jwt import get_current_user
+
+router = APIRouter()
+
+limiter = Limiter(key_func=get_remote_address)
+
+@router.get('/comments/{post_id}', response_model=list[CommentResponseSchema])
+@limiter.limit("50/1seconds")
+async def all_comments(
+        request: Request,
+        post_id: int,
+        db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(PostModel)
+        .where(PostModel.id == post_id)
+    )
+    post = result.scalar_one_or_none()
+
+    if not post:
+        raise HTTPException(
+            status_code=404,
+            detail='Post not found'
+        )
+
+    result = await db.execute(
+        select(CommentModel)
+        .where(CommentModel.post_id == post_id)
+    )
+    comments = result.scalars().all()
+
+    return comments
+
+@router.post('/comments/{post_id}', response_model=CommentCreateUpdateSchema)
+@limiter.limit("1/3seconds")
+async def create_comment(
+        request: Request,
+        post_id: int,
+        comment_schemas: CommentCreateUpdateSchema,
+        db: AsyncSession = Depends(get_db),
+        user_id: int = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(PostModel)
+        .where(PostModel.id == post_id)
+    )
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(
+            status_code=404,
+            detail='Post not found'
+        )
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.id == user_id))
+    user = result.scalar_one_or_none()
+
+    new_comment = CommentModel(
+        **comment_schemas.model_dump(),
+        user_id=user_id,
+        post_id=post_id
+    )
+    db.add(new_comment)
+    await db.commit()
+    await db.refresh(new_comment)
+
+    if post.user_id != user_id:
+        new_notification = NotificationModel(
+            user_id=post.user_id,
+            user_id_from_whom=user_id,
+            title=f"User {user.username} commented your post",
+            is_read=False
+        )
+        db.add(new_notification)
+        await db.commit()
+
+    return new_comment
+
+@router.put('/comments/{comment_id}', response_model=CommentCreateUpdateSchema)
+@limiter.limit("1/3seconds")
+async def edit_comment(
+        request: Request,
+        comment_id: int,
+        comment_schemas: CommentCreateUpdateSchema,
+        db: AsyncSession = Depends(get_db),
+        user_id: int = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(CommentModel)
+        .where(CommentModel.id == comment_id)
+    )
+    comment = result.scalar_one_or_none()
+
+    if not comment:
+        raise HTTPException(
+            status_code=404,
+            detail='Comment not found'
+        )
+
+    if comment.user_id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail='Not your comment'
+        )
+
+    comment.text = comment_schemas.text
+    await db.commit()
+    await db.refresh(comment)
+
+    return comment
+
+@router.delete('/comments/{comment_id}')
+@limiter.limit("1/3seconds")
+async def del_comment(
+        request: Request,
+        comment_id: int,
+        db: AsyncSession = Depends(get_db),
+        user_id: int = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(CommentModel)
+        .where(CommentModel.id == comment_id)
+    )
+    comment =  result.scalar_one_or_none()
+
+    if not comment:
+        raise HTTPException(
+            status_code=404,
+            detail='Comment not found'
+        )
+
+    if comment.user_id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail='Not your comment'
+        )
+    await db.delete(comment)
+    await db.commit()
+    return {'message': 'Comment deleted'}
+
+@router.post('/comments/{comment_id}/like')
+@limiter.limit("1/3seconds")
+async def like_comment(
+        request: Request,
+        comment_id: int,
+        db: AsyncSession = Depends(get_db),
+        user_id: int = Depends(get_current_user)
+):
+    result = await db.execute(
+        select(UserModel)
+        .where(UserModel.id == user_id)
+    )
+    user = result.scalar_one_or_none()
+
+    result = await db.execute(
+        select(CommentModel)
+        .where(CommentModel.id == comment_id)
+    )
+    comment = result.scalar_one_or_none()
+
+    if not comment:
+        raise HTTPException(
+            status_code=404,
+            detail='Comment not found'
+        )
+
+    result = await db.execute(
+        select(CommentLikeModel)
+        .where(
+            CommentLikeModel.user_id == user_id,
+            CommentLikeModel.comment_id == comment_id)
+    )
+    existing = result.scalar_one_or_none()
+
+    if existing:
+        await db.delete(existing)
+        comment.like -= 1
+        await db.commit()
+        return {'status': 'unliked'}
+
+    else:
+        db.add(CommentLikeModel(user_id=user_id, comment_id=comment_id))
+        if comment.user_id != user_id:
+            new_notification = NotificationModel(
+                user_id=comment.user_id,
+                user_id_from_whom=user_id,
+                title=f"User {user.username} commented your post",
+                is_read=False
+            )
+            db.add(new_notification)
+        comment.like += 1
+        await db.commit()
+        return {'status': 'liked'}
