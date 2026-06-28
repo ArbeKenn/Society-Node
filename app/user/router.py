@@ -48,7 +48,7 @@ async def registration(
 
     if existing_user:
         raise HTTPException(
-            status_code=404,
+            status_code=409,
             detail='The user already exists'
         )
 

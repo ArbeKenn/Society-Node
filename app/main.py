@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -7,7 +6,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from starlette.middleware.cors import CORSMiddleware
 
-from app.database import create_tables, get_db
+from app.database import get_db
 from app.posts.models import Post as PostModel
 from app.admin.router import router as admin_router
 from app.user.router import router as user_router
@@ -17,16 +16,10 @@ from app.notifications.router import router as notification_router
 from app.search.router import router as search_router
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await create_tables()
-    yield
-
 app = FastAPI(
     title='Society Node',
     description='The API for the Society Node social platform. Posting, comments, feed, internal economy (coins), and a perk and feature store.',
-    version='1.0.0',
-    lifespan=lifespan,
+    version='1.0.0'
 )
 
 app.add_middleware(
